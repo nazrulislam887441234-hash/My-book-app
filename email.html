@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset & Email Verification</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Hind Siliguri', sans-serif; }
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #0a0e13 50%, #161b22 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-attachment: fixed;
+        }
+        .reset-box {
+            background: rgba(22, 27, 34, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid #30363d;
+            border-radius: 24px;
+            padding: 35px 30px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 0 40px rgba(88, 166, 255, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+            text-align: center;
+            animation: fadeIn 0.6s ease;
+        }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(30px)} to{opacity:1; transform:translateY(0)} }
+        
+        .logo-wrap {
+            margin: 0 auto 20px;
+            text-align: center;
+        }
+        .logo-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            object-fit: cover;
+            border: 2px solid #58a6ff;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.4);
+            background: #fff;
+            padding: 5px;
+        }
+        .logo-text { 
+            font-size: 26px; 
+            background: linear-gradient(90deg, #58a6ff, #1f6feb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800; 
+            margin-bottom: 10px; 
+            letter-spacing: 1px;
+        }
+        .title { font-size: 20px; color: #c9d1d9; margin-bottom: 8px; font-weight: 600; }
+        
+        .example-pass {
+            background: linear-gradient(135deg, #1f6feb, #58a6ff);
+            padding: 12px;
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            margin-bottom: 18px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(31, 111, 235, 0.3);
+        }
+        
+        .email-show {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 12px 15px;
+            border-radius: 10px;
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .email-show i { color: #58a6ff; margin-right: 6px; }
+        
+        .input-group { text-align: left; margin-bottom: 18px; position: relative; }
+        .input-group label { font-size: 14px; color: #8b949e; margin-bottom: 8px; display: block; font-weight: 500; }
+        input {
+            width: 100%;
+            padding: 14px 15px;
+            background: #0d1117;
+            border: 2px solid #30363d;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus { border-color: #58a6ff; box-shadow: 0 0 0 4px rgba(88, 166, 255, 0.15); }
+        
+        .rules {
+            text-align: left;
+            font-size: 12.5px;
+            color: #8b949e;
+            margin-top: 10px;
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #21262d;
+        }
+        .rules li { list-style: none; margin-bottom: 6px; display: flex; align-items: center; }
+        .rules li i { margin-right: 8px; font-size: 14px; width: 16px; }
+        .rules .ok { color: #2ea043; }
+        .rules .no { color: #da3633; }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #238636, #2ea043);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(46, 160, 67, 0.3);
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 25px rgba(46, 160, 67, 0.4); }
+        .btn:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .message {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 18px;
+            font-size: 14px;
+            display: none;
+            font-weight: 500;
+        }
+        .success { background: rgba(46, 160, 67, 0.15); border: 1px solid #238636; color: #2ea043; }
+        .error { background: rgba(218, 54, 51, 0.15); border: 1px solid #da3633; color: #da3633; }
+        
+        .loader { display: none; }
+        .loader i { animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* CONFIRM POPUP */
+        .popup {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            display: none; justify-content: center; align-items: center; z-index: 9999;
+            padding: 20px;
+        }
+        .popup-content {
+            background: #161b22; padding: 35px 25px; border-radius: 20px; border: 1px solid #30363d;
+            width: 100%; max-width: 420px; text-align: center; animation: popup 0.3s ease;
+            box-shadow: 0 0 40px rgba(88, 166, 255, 0.2);
+        }
+        @keyframes popup { from{transform:scale(0.8)} to{transform:scale(1)} }
+        .popup-content h3 { color: #58a6ff; margin-bottom: 15px; font-size: 20px; }
+        .popup-content p { color: #c9d1d9; margin-bottom: 25px; font-size: 15px; line-height: 1.6; }
+        .popup-btns { display: flex; gap: 12px; }
+        .popup-btns .btn { flex: 1; margin: 0; }
+        .popup-btns .btn-cancel { background: linear-gradient(135deg, #da3633, #b91c1c); }
+
+        /* MOBILE RESPONSIVE */
+        @media (max-width: 480px) {
+            .reset-box { padding: 25px 20px; border-radius: 20px; }
+            .logo-img { width: 70px; height: 70px; }
+            .logo-text { font-size: 22px; }
+            .title { font-size: 18px; }
+            input { padding: 12px; }
+            .btn { padding: 13px; font-size: 15px; }
+            .popup-content { padding: 25px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="reset-box">
+        <div class="logo-wrap">
+            <!-- এখানে আপনার লোগোর লিংক বসান -->
+            <img src="https://mybookbd.com/20260609_103856.png" alt="MY BOOK Logo" class="logo-img">
+        </div>
+        <div class="logo-text">MY BOOK</div>
+        <h2 class="title" id="mainTitle">পাসওয়ার্ড রিসেট করুন</h2>
+        
+        <div class="example-pass">
+            <i class="fa-solid fa-key"></i> Example: @#MY%book22
+        </div>
+
+        <div class="email-show" id="emailBox">
+            <i class="fa-solid fa-envelope"></i> <span id="userEmail"></span>
+        </div>
+
+        <div class="message" id="messageBox"></div>
+
+        <!-- Password Reset Form -->
+        <div id="resetForm" style="display:none">
+            <div class="input-group">
+                <label>নতুন পাসওয়ার্ড</label>
+                <input type="password" id="newPassword" placeholder="নতুন পাসওয়ার্ড দিন" onkeyup="checkPassword()">
+            </div>
+            <div class="input-group">
+                <label>কনফার্ম পাসওয়ার্ড</label>
+                <input type="password" id="confirmPassword" placeholder="আবার পাসওয়ার্ড দিন" onkeyup="checkPassword()">
+            </div>
+
+            <ul class="rules" id="passwordRules">
+                <li id="rule-length"><i class="fa-solid fa-circle"></i> কমপক্ষে 6 ডিজিট</li>
+                <li id="rule-lower"><i class="fa-solid fa-circle"></i> 1 টি ছোট হাতের অক্ষর a-z</li>
+                <li id="rule-upper"><i class="fa-solid fa-circle"></i> 1 টি বড় হাতের অক্ষর A-Z</li>
+                <li id="rule-number"><i class="fa-solid fa-circle"></i> 1 টি নাম্বার 0-9</li>
+                <li id="rule-special"><i class="fa-solid fa-circle"></i> 1 টি স্পেশাল ক্যারেক্টার @#$%</li>
+                <li id="rule-match"><i class="fa-solid fa-circle"></i> দুইটা পাসওয়ার্ড মিলতে হবে</li>
+            </ul>
+
+            <button class="btn" id="resetBtn" onclick="showConfirmPopup()">
+                <span class="btn-text">পাসওয়ার্ড আপডেট করুন</span>
+                <span class="loader"><i class="fa-solid fa-spinner"></i></span>
+            </button>
+        </div>
+
+        <!-- Email Verify Message -->
+        <div id="verifyMessage" style="display:none">
+            <p style="color:#8b949e; margin-bottom:20px">আপনার ইমেইল সফলভাবে ভেরিফাই হয়েছে ✅</p>
+            <button class="btn" onclick="window.location.href='login.html'">লগিন করুন</button>
+        </div>
+
+        <!-- Invalid Link -->
+        <div id="invalidLink" style="display:none">
+            <p style="color:#da3633; margin-bottom:20px">লিংকটি অবৈধ অথবা মেয়াদ শেষ হয়ে গেছে ❌</p>
+            <button class="btn" onclick="window.location.href='forgot.html'">আবার রিকোয়েস্ট করুন</button>
+        </div>
+    </div>
+
+    <!-- CONFIRM POPUP -->
+    <div class="popup" id="confirmPopup">
+        <div class="popup-content">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i> সতর্কতা!</h3>
+            <p>আপনার পাসওয়ার্ডটি মনে রাখুন। <br> না হলে পরবর্তীতে লগিন করতে পারবেন না।</p>
+            <div class="popup-btns">
+                <button class="btn btn-cancel" onclick="closePopup()">Cancel</button>
+                <button class="btn btn-confirm" onclick="handleResetPassword()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, verifyPasswordResetCode, confirmPasswordReset, applyActionCode } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = { 
+    apiKey: "AIzaSyDgqisJ-iCXmlINKKtQv8EiKSoSp7or6vw", 
+    authDomain: "mybook-95b97.firebaseapp.com", 
+    projectId: "mybook-95b97" 
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const urlParams = new URLSearchParams(window.location.search);
+const mode = urlParams.get('mode');
+const actionCode = urlParams.get('oobCode');
+
+const messageBox = document.getElementById('messageBox');
+const emailBox = document.getElementById('emailBox');
+const userEmail = document.getElementById('userEmail');
+
+let isPasswordValid = false;
+
+function showMessage(text, type){
+    messageBox.className = `message ${type}`;
+    messageBox.innerText = text;
+    messageBox.style.display = 'block';
+}
+
+// Password Validation
+window.checkPassword = () => {
+    const pass = document.getElementById('newPassword').value;
+    const confirmPass = document.getElementById('confirmPassword').value;
+    
+    const rules = {
+        length: pass.length >= 6,
+        lower: /[a-z]/.test(pass),
+        upper: /[A-Z]/.test(pass),
+        number: /[0-9]/.test(pass),
+        special: /[@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass),
+        match: pass === confirmPass && pass !== ""
+    };
+
+    updateRule('rule-length', rules.length);
+    updateRule('rule-lower', rules.lower);
+    updateRule('rule-upper', rules.upper);
+    updateRule('rule-number', rules.number);
+    updateRule('rule-special', rules.special);
+    updateRule('rule-match', rules.match);
+
+    isPasswordValid = Object.values(rules).every(Boolean);
+}
+
+function updateRule(id, isValid){
+    const el = document.getElementById(id);
+    if(isValid){
+        el.classList.add('ok'); el.classList.remove('no');
+        el.querySelector('i').className = 'fa-solid fa-circle-check';
+    } else {
+        el.classList.add('no'); el.classList.remove('ok');
+        el.querySelector('i').className = 'fa-solid fa-circle-xmark';
+    }
+}
+
+// Popup
+window.showConfirmPopup = () => {
+    if(!isPasswordValid) return showMessage("উপরে দেওয়া সব শর্ত পূরণ করুন", "error");
+    document.getElementById('confirmPopup').style.display = 'flex';
+}
+window.closePopup = () => {
+    document.getElementById('confirmPopup').style.display = 'none';
+}
+
+async function init(){
+    if(!mode || !actionCode){
+        document.getElementById('invalidLink').style.display = 'block';
+        return;
+    }
+
+    try {
+        if(mode === 'resetPassword'){
+            const email = await verifyPasswordResetCode(auth, actionCode);
+            userEmail.innerText = email;
+            emailBox.style.display = 'block';
+            document.getElementById('resetForm').style.display = 'block';
+            
+        } else if(mode === 'verifyEmail'){
+            await applyActionCode(auth, actionCode);
+            document.getElementById('verifyMessage').style.display = 'block';
+            document.getElementById('mainTitle').innerText = "ইমেইল ভেরিফাইড";
+        }
+    } catch (error) {
+        document.getElementById('invalidLink').style.display = 'block';
+        showMessage("লিংকটি অবৈধ অথবা আগেই ব্যবহার করা হয়েছে", "error");
+    }
+}
+
+window.handleResetPassword = async () => {
+    closePopup();
+    const newPass = document.getElementById('newPassword').value;
+    const btn = document.getElementById('resetBtn');
+    const btnText = btn.querySelector('.btn-text');
+    const loader = btn.querySelector('.loader');
+
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    loader.style.display = 'inline-block';
+
+    try {
+        await confirmPasswordReset(auth, actionCode, newPass);
+        showMessage("পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! 3 সেকেন্ডে লগিন পেজে যাবে", "success");
+        document.getElementById('resetForm').style.display = 'none';
+        setTimeout(()=>{ window.location.href = 'login.html'; }, 3000);
+    } catch (error) {
+        showMessage("Error: " + error.message, "error");
+    }
+
+    btn.disabled = false;
+    btnText.style.display = 'inline-block';
+    loader.style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
